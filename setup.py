@@ -20,7 +20,7 @@ setup(
     author="Pascal Hartig",
     author_email="phartig@weluse.de",
     description="A nose plugin to run selenium tests with django",
-    packages=['noseselenium'],
+    packages=['noseselenium', 'noseselenium.thirdparty'],
     long_description=__doc__,
     requires=['Django (>=1.2)', 'nose (>=0.10)'],
     classifiers=[
@@ -30,9 +30,9 @@ setup(
         "Topic :: Software Development :: Testing",
         "Topic :: Software Development :: Libraries :: Python Modules"
     ],
-    entry_points = {
+    entry_points={
         'nose.plugins.0.10': [
-            'selenium = noseselenium.plugins:SeleniumPlugin' % name,
+            'selenium = noseselenium.plugins:SeleniumPlugin'
         ]
     }
 )

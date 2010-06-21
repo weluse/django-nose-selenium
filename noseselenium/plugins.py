@@ -12,7 +12,6 @@ _django-sane-testing: http://github.com/Almad/django-sane-testing/
 :license: BSD, see LICENSE for more details.
 """
 
-import os
 import socket
 import nose
 from nose.plugins import Plugin
@@ -21,6 +20,10 @@ from noseselenium.thirdparty.selenium import selenium
 
 
 def get_test_case_class(nose_test):
+    """
+    Extracts the class from the nose tests that depends on whether it's a
+    method test case or a function test case.
+    """
     if isinstance(nose_test.test, nose.case.MethodTestCase):
         return nose_test.test.test.im_class
     else:
@@ -43,8 +46,7 @@ class SeleniumPlugin(Plugin):
         When preparing the test, inject a selenium instance.
         """
 
-        from django.conf import settings
-
+        test_case = get_test_case_class(test)
         if getattr(test_case, "selenium_test", False):
             self._inject_selenium(test)
 
@@ -63,12 +65,14 @@ class SeleniumPlugin(Plugin):
         """
         Injects the selenium instance into the mehtod.
         """
+        from django.conf import settings
 
         test_case = get_test_case_class(test)
         test_case.selenium_plugin_started = True
 
+        # Provide some reasonable default values
         sel = selenium(
-            getattr(settings, "SELENIUM_HOST", "localhost").
+            getattr(settings, "SELENIUM_HOST", "localhost"),
             int(getattr(settings, "SELENIUM_PORT", 4444)),
             getattr(settings, "SELENIUM_BROWSER_COMMAND", "*chrome"),
             getattr(settings, "SELENIUM_URL_ROOT", "http://127.0.0.1:8000/"))
