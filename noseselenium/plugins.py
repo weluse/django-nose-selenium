@@ -17,6 +17,7 @@ import nose
 from nose.plugins import Plugin
 from nose.plugins.skip import SkipTest
 from noseselenium.thirdparty.selenium import selenium
+from unittest import TestCase
 
 
 def get_test_case_class(nose_test):
@@ -57,7 +58,11 @@ class SeleniumPlugin(Plugin):
 
         test_case = get_test_case_class(test)
         if getattr(test_case, 'selenium_started', False):
-            self = test.test.test.im_self
+            if isinstance(test.test, nose.case.MethodTestCase):
+                self = test.test.test.im_self
+            elif isinstance(test.test, TestCase):
+                self = test.test._exc_info.im_self
+
             self.selenium.stop()
             del self.selenium
 
@@ -90,5 +95,7 @@ class SeleniumPlugin(Plugin):
             # `self`.
             if isinstance(test.test, nose.case.MethodTestCase):
                 test.test.test.im_self.selenium = sel
+            elif isinstance(test.test, TestCase):
+                test.test._exc_info.im_self.selenium = sel
             else:
                 raise SkipTest("Test skipped because it's not a method.")
