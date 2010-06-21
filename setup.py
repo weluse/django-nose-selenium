@@ -20,6 +20,7 @@ setup(
     author="Pascal Hartig",
     author_email="phartig@weluse.de",
     description="A nose plugin to run selenium tests with django",
+    url="http://github.com/weluse/django-nose-selenium",
     packages=['noseselenium', 'noseselenium.thirdparty'],
     long_description=__doc__,
     requires=['Django (>=1.2)', 'nose (>=0.10)'],
