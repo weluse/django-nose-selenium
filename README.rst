@@ -39,3 +39,19 @@ selenium instance with the given options::
            """Tests the start page."""
 
            self.selenium.open("/")
+
+
+Alternatively, django-nose-selenium provides a mixin that has the benefit that
+it raises a SkipTest exception if the plugin was not loaded and the selenium
+attribute is accessed::
+
+
+   from noseselenium.cases import SeleniumTestCaseMixin
+
+
+   class TestSelenium(TestCase, SeleniumTestCaseMixin):
+
+       def test_start(self):
+           """Tests the start page."""
+
+           self.selenium.open("/")
