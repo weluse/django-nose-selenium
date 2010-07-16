@@ -11,11 +11,11 @@ To use, run nosetests with the ``--with-selenium`` flag.
 Installation
 ------------
 
-Via PyPI::
+From PyPI::
    
    pip install django-nose-selenium
 
-Via Git::
+From Git::
 
    pip install -e git://github.com/weluse/django-nose-selenium.git#egg=noseselenium
 
