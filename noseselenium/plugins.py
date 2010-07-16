@@ -68,7 +68,7 @@ class SeleniumPlugin(Plugin):
 
     def _inject_selenium(self, test):
         """
-        Injects the selenium instance into the mehtod.
+        Injects a selenium instance into the method.
         """
         from django.conf import settings
 
@@ -92,10 +92,42 @@ class SeleniumPlugin(Plugin):
         else:
             test_case.selenium_started = True
             # Only works on method test cases, because we obviously need
-            # `self`.
+            # self.
             if isinstance(test.test, nose.case.MethodTestCase):
                 test.test.test.im_self.selenium = sel
             elif isinstance(test.test, TestCase):
                 test.test._exc_info.im_self.selenium = sel
             else:
                 raise SkipTest("Test skipped because it's not a method.")
+
+
+class SeleniumFixturesPlugin(Plugin):
+    """
+    Loads fixtures defined in the attribute `selenium_fixtures`. It does,
+    however, not take care of removing them after the test or even the whole
+    test case is run.
+    Django fixtures are usually run in transactions so a test server accessing
+    the test database won't be able access the data.
+    """
+
+    activation_parameter = "--with-selenium-fixtures"
+    name = "selenium-fixtures"
+    score = 80
+
+    def startTest(self, test):
+        """
+        When preparing the database, check for the `selenium_fixtures`
+        attribute and load those.
+        """
+
+        from django.test.testcases import call_command
+
+        test_case = get_test_case_class(test)
+        fixtures = getattr(test_case, "selenium_fixtures", [])
+
+        if fixtures:
+            call_command('loaddata', *fixtures, **{
+                'verbosity': 1,
+                # Necessary to let the test server access them.
+                'commit': True
+            })

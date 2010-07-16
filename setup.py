@@ -33,7 +33,8 @@ setup(
     ],
     entry_points={
         'nose.plugins.0.10': [
-            'selenium = noseselenium.plugins:SeleniumPlugin'
+            'selenium = noseselenium.plugins:SeleniumPlugin',
+            'selenium_fixtures = noseselenium.plugins:SeleniumFixturesPlugin'
         ]
     }
 )
