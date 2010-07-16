@@ -55,3 +55,33 @@ attribute is accessed::
            """Tests the start page."""
 
            self.selenium.open("/")
+
+Fixtures
+--------
+
+The default fixtures of django are run in transactions and not available to a
+live testing server, therefore `noseselenium` provides an option to load and
+**commit** fixtures to the database automated. Please note that there's no
+automatic rollback, so the data will stay in your test database for the rest of
+the run if you don't provide a custom teardown strategy.
+
+::
+
+   from noseselenium.cases import SeleniumTestCaseMixin
+
+
+   class TestUserLogin(TestCase, SeleniumTestCaseMixin):
+
+       selenium_fixtures = ['user_data.json']
+
+       def test_login(self):
+           """Tests the login page."""
+
+           sel = self.selenium
+           sel.open("/login/")
+           sel.type("id_username", "pascal")
+           sel.type("id_password", "iwantapony")
+           sel.click(//form[@id='myform']/p/button")
+
+To enable selenium fixtures, nosetests must be called with the
+additional ``--with-selenium-fixtures`` flag.
