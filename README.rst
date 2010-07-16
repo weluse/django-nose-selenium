@@ -92,7 +92,7 @@ the run if you don't provide a custom teardown strategy.
            sel.open("/login/")
            sel.type("id_username", "pascal")
            sel.type("id_password", "iwantapony")
-           sel.click(//form[@id='myform']/p/button")
+           sel.click("//form[@id='myform']/p/button")
 
 To enable selenium fixtures, nosetests must be called with the
 additional ``--with-selenium-fixtures`` flag.
