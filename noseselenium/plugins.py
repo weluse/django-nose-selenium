@@ -17,6 +17,7 @@ import nose
 from nose.plugins import Plugin
 from nose.plugins.skip import SkipTest
 from noseselenium.thirdparty.selenium import selenium
+from django.db.backends.creation import TEST_DATABASE_PREFIX
 from unittest import TestCase
 
 
@@ -114,6 +115,44 @@ class SeleniumFixturesPlugin(Plugin):
     name = "selenium-fixtures"
     score = 80
 
+    _setup_complete = False
+
+    def _get_test_db_name(self, connection):
+        """Builds the test db name."""
+
+        test_database_name = connection.settings_dict.get('TEST_NAME', None)
+        if test_database_name is None:
+            test_database_name = connection.settings_dict['NAME']
+            # This is not very precise.
+            if not test_database_name.startswith(TEST_DATABASE_PREFIX):
+                test_database_name = TEST_DATABASE_PREFIX + \
+                        test_database_name
+
+        return test_database_name
+
+
+    def _select_test_db(self):
+        """Selects the test database(s)."""
+
+        from django.db import connections
+
+        if self._setup_complete:
+            return
+
+        for alias in connections:
+            connection = connections[alias]
+            connection.close()
+
+            test_db_name = self._get_test_db_name(connection)
+            connection.settings_dict['NAME'] = test_db_name
+            can_rollback = connection.creation._rollback_works()
+            connection.settings_dict['SUPPORTS_TRANSACTIONS'] = can_rollback
+
+            # Trigger side effects.
+            connection.cursor()
+            self._setup_complete = True
+
+
     def startTest(self, test):
         """
         When preparing the database, check for the `selenium_fixtures`
@@ -124,6 +163,7 @@ class SeleniumFixturesPlugin(Plugin):
 
         test_case = get_test_case_class(test)
         fixtures = getattr(test_case, "selenium_fixtures", [])
+        self._select_test_db()
 
         if fixtures:
             call_command('loaddata', *fixtures, **{
