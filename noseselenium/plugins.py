@@ -26,6 +26,38 @@ from BaseHTTPServer import HTTPServer
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.servers.basehttp import WSGIRequestHandler, \
         AdminMediaHandler, WSGIServerException
+from django.db.backends.creation import TEST_DATABASE_PREFIX
+
+
+def _get_test_db_name(connection):
+    """Tries to build the test database name like django does."""
+
+    if connection.settings_dict['TEST_NAME']:
+        return connection.settings_dict['TEST_NAME']
+    else:
+        old_name = connection.settings_dict['NAME']
+        if old_name.startswith(TEST_DATABASE_PREFIX):
+            return old_name
+        else:
+            return TEST_DATABASE_PREFIX + \
+                    old_name
+
+def _setup_test_db():
+    """Activates a test dbs without recreating them."""
+
+    from django.db import connections
+
+    for alias in connections:
+        connection = connections[alias]
+        connection.close()
+
+        test_db_name = _get_test_db_name(connection)
+        connection.settings_dict['NAME'] = test_db_name
+        can_rollback = connection.creation._rollback_works()
+        connection.settings_dict['SUPPORTS_TRANSACTIONS'] = can_rollback
+
+        # Trigger side effects.
+        connection.cursor()
 
 
 def get_test_case_class(nose_test):
@@ -202,20 +234,6 @@ class AbstractLiveServerPlugin(Plugin):
     def stop_server(self):
         raise NotImplementedError()
 
-    def check_database_multithread_compilant(self):
-        """Check if the database is capable of multithreading, which is
-        required to run a live server.
-        """
-
-        from django.conf import settings
-
-        if settings.DATABASE_ENGINE == 'sqlite3' \
-           and (not getattr(settings, 'TEST_DATABASE_NAME', False) \
-                or settings.TEST_DATABASE_NAME == ':memory:'):
-
-            raise SkipTest("Running on in-memory database, but requested to "
-                           "run a live server. Skipping.")
-
     def startTest(self, test):
         """Starts the live server."""
 
@@ -226,8 +244,11 @@ class AbstractLiveServerPlugin(Plugin):
         if not self.server_started and \
            getattr(test_case, "start_live_server", False):
 
+            _setup_test_db()
+
             # Raises an exception if not.
-            self.check_database_multithread_compilant()
+            settings.TEST_MODE = True
+
             self.start_server(
                 address=getattr(settings, 'LIVE_SERVER_ADDRESS',
                                 '0.0.0.0'),
