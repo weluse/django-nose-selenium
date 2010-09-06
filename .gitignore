@@ -1,1 +1,4 @@
 *.pyc
+build/
+dist/
+django_nose_selenium.egg-info/

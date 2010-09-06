@@ -14,10 +14,18 @@ _django-sane-testing: http://github.com/Almad/django-sane-testing/
 
 import socket
 import nose
+import time
+import threading
 from nose.plugins import Plugin
 from nose.plugins.skip import SkipTest
 from noseselenium.thirdparty.selenium import selenium
 from unittest import TestCase
+# Liveserver imports
+from SocketServer import ThreadingMixIn
+from BaseHTTPServer import HTTPServer
+from django.core.handlers.wsgi import WSGIHandler
+from django.core.servers.basehttp import WSGIRequestHandler, \
+        AdminMediaHandler, WSGIServerException
 
 
 def get_test_case_class(nose_test):
@@ -131,3 +139,201 @@ class SeleniumFixturesPlugin(Plugin):
                 # Necessary to let the test server access them.
                 'commit': True
             })
+
+
+class StoppableWSGIServer(ThreadingMixIn, HTTPServer):
+    """WSGIServer with short timeout, so that server thread can stop this
+    server.
+
+    This implementation is again from django-sane-testing, while the original
+    code is taken from django ticket #2879 which proposes a live server in the
+    django core.
+    """
+
+    application = None
+
+    def __init__(self, server_address, RequestHandlerClass=None):
+        HTTPServer.__init__(self, server_address, RequestHandlerClass)
+
+    def server_bind(self):
+        """Bind server to socket. Overrided to store server name and
+        set timeout.
+        """
+
+        try:
+            HTTPServer.server_bind(self)
+        except Exception as e:
+            raise WSGIServerException(e)
+
+        self.setup_environ()
+        self.socket.settimeout(1)
+
+    def get_request(self):
+        """Checks for timeout when getting request."""
+        sock, address = self.socket.accept()
+        return (sock, address)
+
+    def setup_environ(self):
+        """Set up a basic environment."""
+
+        self.base_environ = {
+            'SERVER_NAME': self.server_name,
+            'GATEWAY_INTERFACE': 'CGI/1.1',
+            'SERVER_PORT': str(self.server_port),
+            'REMOTE_HOST': '',
+            'CONTENT_LENGTH': '',
+            'SCRIPT_NAME': '',
+        }
+
+
+class AbstractLiveServerPlugin(Plugin):
+    """Base class for live servers."""
+
+    score = 70
+
+    def __init__(self):
+        Plugin.__init__(self)
+        self.server_started = False
+        self.server_thread = None
+
+    def start_server(self):
+        raise NotImplementedError()
+
+    def stop_server(self):
+        raise NotImplementedError()
+
+    def check_database_multithread_compilant(self):
+        """Check if the database is capable of multithreading, which is
+        required to run a live server.
+        """
+
+        from django.conf import settings
+
+        if settings.DATABASE_ENGINE == 'sqlite3' \
+           and (not getattr(settings, 'TEST_DATABASE_NAME', False) \
+                or settings.TEST_DATABASE_NAME == ':memory:'):
+
+            raise SkipTest("Running on in-memory database, but requested to "
+                           "run a live server. Skipping.")
+
+    def startTest(self, test):
+        """Starts the live server."""
+
+        from django.conf import settings
+
+        test_case = get_test_case_class(test)
+
+        if not self.server_started and \
+           getattr(test_case, "start_live_server", False):
+
+            # Raises an exception if not.
+            self.check_database_multithread_compilant()
+            self.start_server(
+                address=getattr(settings, 'LIVE_SERVER_ADDRESS',
+                                '0.0.0.0'),
+                port=getattr(settings, 'LIVE_SERVER_PORT',
+                             8080)
+            )
+
+            self.server_started = True
+            setattr(test_case, 'http_plugin_started', True)
+
+    def stopTest(self, test):
+        """Stops the live server if necessary."""
+
+        test_case = get_test_case_class(test)
+        if self.server_started and \
+           getattr(test_case, 'http_plugin_started', False):
+
+            self.stop_server()
+            self.server_started = False
+
+
+class TestServerThread(threading.Thread):
+    """Thread for running a http server while tests are running."""
+
+    def __init__(self, address, port):
+        self.address = address
+        self.port = port
+        self._stopevent = threading.Event()
+        self.started = threading.Event()
+        self.error = None
+        super(TestServerThread, self).__init__()
+
+    def run(self):
+        """Sets up test server and loops over handling http requests."""
+        try:
+            handler = AdminMediaHandler(WSGIHandler())
+            server_address = (self.address, self.port)
+            httpd = StoppableWSGIServer(server_address, WSGIRequestHandler)
+            httpd.application = handler
+            self.started.set()
+        except WSGIServerException as err:
+            self.error = err
+            self.started.set()
+            return
+
+        # Loop until we get a stop event.
+        while not self._stopevent.isSet():
+            httpd.handle_request()
+
+    def join(self, timeout=None):
+        """Stop the thread and wait for it to finish."""
+        self._stopevent.set()
+        threading.Thread.join(self, timeout)
+
+
+class DjangoLiveServerPlugin(AbstractLiveServerPlugin):
+    """
+    Patch Django on fly and start live HTTP server, if TestCase is inherited
+    from HttpTestCase or start_live_server attribute is set to True.
+
+    Taken from Michael Rogers implementation from `getwindmill.com
+    <http://trac.getwindmill.com/browser/trunk/windmill/authoring/
+    djangotest.py>`_.
+    """
+    name = 'djangoliveserver'
+    activation_parameter = '--with-djangoliveserver'
+
+    def start_server(self, address='0.0.0.0', port=8000):
+        self.server_thread = TestServerThread(address, port)
+        self.server_thread.start()
+        self.server_thread.started.wait()
+        if self.server_thread.error:
+            raise self.server_thread.error
+
+    def stop_server(self):
+        self.server_thread.join()
+
+
+class CherryPyLiveServerPlugin(AbstractLiveServerPlugin):
+    """Live server plugin using cherrypy instead of the django server,
+    that got its issues. Original code by Mikeal Rogers, released under
+    Apache License.
+    """
+
+    name = 'cherrypyliveserver'
+    activation_parameter = '--with-cherrypyliveserver'
+
+    def start_server(self, address='0.0.0.0', port=8000):
+        from cherrypy.wsgiserver import CherryPyWSGIServer
+        from threading import Thread
+
+        _application = AdminMediaHandler(WSGIHandler())
+
+        def application(environ, start_response):
+            environ['PATH_INFO'] = environ['SCRIPT_NAME'] + \
+                    environ['PATH_INFO']
+
+            return _application(environ, start_response)
+
+        self.httpd = CherryPyWSGIServer((address, port), application,
+                                        server_name='django-test-http')
+        self.httpd_thread = Thread(target=self.httpd.start)
+        self.httpd_thread.start()
+        # FIXME: This could be avoided by passing self to thread class starting
+        # django and waiting for Event lock
+        time.sleep(.5)
+
+    def stop_server(self):
+        self.httpd.stop()

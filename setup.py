@@ -34,7 +34,9 @@ setup(
     entry_points={
         'nose.plugins.0.10': [
             'selenium = noseselenium.plugins:SeleniumPlugin',
-            'selenium_fixtures = noseselenium.plugins:SeleniumFixturesPlugin'
+            'selenium_fixtures = noseselenium.plugins:SeleniumFixturesPlugin',
+            'cherrypyliveserver = noseselenium.plugins:CherryPyLiveServerPlugin',
+            'djangoliveserver = noseselenium.plugins:DjangoLiveServerPlugin'
         ]
     }
 )
