@@ -32,3 +32,4 @@ class SeleniumTestCaseMixin(object):
     selenium = SeleniumSkipper()
     # Triggers the plugin if enabled.
     selenium_test = True
+    start_live_server = True
