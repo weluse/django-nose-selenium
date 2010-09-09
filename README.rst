@@ -23,6 +23,8 @@ From Git::
 Django Settings
 ---------------
 
+.. _base_settings:
+
 The plugin supports the following settings:
 
    * SELENIUM_HOST, default: `127.0.0.1`
@@ -96,3 +98,26 @@ the run if you don't provide a custom teardown strategy.
 
 To enable selenium fixtures, nosetests must be called with the
 additional ``--with-selenium-fixtures`` flag.
+
+
+Liveserver
+----------
+
+`noseselenium` provides an expiremental support for running a live server that
+Selenium can connect to. Currently, there's a threaded server that reuses
+django's development webserver and a cherrypy implementation. It's recommended
+you use the cherrypy one as the django devserver is certainly not designed to
+run in a multi-threaded environment.
+
+The liveserver plugin introduces two new configuration options:
+
+   * LIVE_SERVER_ADDRESS, defaults to `0.0.0.0`
+   * LIVE_SERVER_PORT, defaults to `8080`
+
+These should match your `Selenium Settings`__.
+
+__ base_settings_
+
+To start the liveserver, nosetest is called with either the
+``--with-djangoliveserver`` or preferably the ``--with-cherrypyliveserver``
+flag.
