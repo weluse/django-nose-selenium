@@ -103,7 +103,7 @@ additional ``--with-selenium-fixtures`` flag.
 Liveserver
 ----------
 
-`noseselenium` provides an expiremental support for running a live server that
+`noseselenium` provides expiremental support for running a live server that
 Selenium can connect to. Currently, there's a threaded server that reuses
 django's development webserver and a cherrypy implementation. It's recommended
 you use the cherrypy one as the django devserver is certainly not designed to
