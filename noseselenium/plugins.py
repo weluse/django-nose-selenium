@@ -27,6 +27,7 @@ from django.core.handlers.wsgi import WSGIHandler
 from django.core.servers.basehttp import WSGIRequestHandler, \
         AdminMediaHandler, WSGIServerException
 from django.db.backends.creation import TEST_DATABASE_PREFIX
+from django.contrib.staticfiles.handlers import StaticFilesHandler
 
 
 def _get_test_db_name(connection):
@@ -296,6 +297,9 @@ class TestServerThread(threading.Thread):
         """Sets up test server and loops over handling http requests."""
         try:
             handler = AdminMediaHandler(WSGIHandler())
+            # TODO: There should be a flag or some check with the settings if
+            # this is what the user wants.
+            handler = StaticFilesHandler(handler)
             server_address = (self.address, self.port)
             httpd = StoppableWSGIServer(server_address, WSGIRequestHandler)
             httpd.application = handler
@@ -352,6 +356,7 @@ class CherryPyLiveServerPlugin(AbstractLiveServerPlugin):
         from threading import Thread
 
         _application = AdminMediaHandler(WSGIHandler())
+        _application = StaticFilesHandler(_application)
 
         def application(environ, start_response):
             environ['PATH_INFO'] = environ['SCRIPT_NAME'] + \
