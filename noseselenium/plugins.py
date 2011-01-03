@@ -220,6 +220,12 @@ class StoppableWSGIServer(ThreadingMixIn, HTTPServer):
             'SCRIPT_NAME': '',
         }
 
+    def get_app(self):
+        return self.application
+
+    def set_app(self,application):
+        self.application = application
+
 
 class AbstractLiveServerPlugin(Plugin):
     """Base class for live servers."""
