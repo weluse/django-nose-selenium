@@ -53,8 +53,11 @@ def _setup_test_db():
 
         test_db_name = _get_test_db_name(connection)
         connection.settings_dict['NAME'] = test_db_name
-        can_rollback = connection.creation._rollback_works()
-        connection.settings_dict['SUPPORTS_TRANSACTIONS'] = can_rollback
+
+        # SUPPORTS_TRANSACTIONS is not needed in newer versions of djangoo
+        if not hasattr(connection.features, 'supports_transactions'):
+            can_rollback = connection.creation._rollback_works()
+            connection.settings_dict['SUPPORTS_TRANSACTIONS'] = can_rollback
 
         # Trigger side effects.
         connection.cursor()
