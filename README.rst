@@ -7,12 +7,36 @@ Adds selenium testing support to your nose test suite.
 
 To use, run nosetests with the ``--with-selenium`` flag.
 
+-----------------
+Why use Selenium?
+-----------------
+
+Selenium is a portable testing framework for web applications. It allows you to
+write tests that run in the browser to test your user interface and javascript
+code that is not available through the usual testing channels. See the examples
+below to get a clearer impression of what selenium tests can provide.
+
+django-nose-selenium allows you to write and run selenium tests the same way as
+usual django unit tests.
+
+------------
+Requirements
+------------
+
+The plugin expects that you have configured the django-nose_ app. In a nutshell,
+this is done by running ``pip install django-nose``, adding ``django_nose`` to
+``INSTALLED_APPS`` and setting ``TEST_RUNNER`` to
+``django_nose.NoseTestSuiteRunner`` in the settings.py.
+
+
+_django-nose: https://github.com/jbalogh/django-nose
+
 ------------
 Installation
 ------------
 
 From PyPI::
-   
+
    pip install django-nose-selenium
 
 From Git::
@@ -39,11 +63,11 @@ The plugin supports the following settings:
 Usage
 -----
 
-Define the class variable ``selenium_test = True`` in your nose test class and
-run ``nosetests --with-selenium``. You can use ``self.selenium`` to access a
-selenium instance with the given options::
+Define the class variable ``selenium_test = True`` in your nose test class.
+You can use ``self.selenium`` to access a selenium instance with the given
+options::
 
-   
+
    class TestSelenium(TestCase):
 
        selenium_test = True
@@ -53,9 +77,13 @@ selenium instance with the given options::
 
            self.selenium.open("/")
 
+To run this test, you have to pass the option ``--with-selenium`` to the Django
+management command test::
 
-Alternatively, django-nose-selenium provides a mixin that has the benefit that
-it raises a SkipTest exception if the plugin was not loaded and the selenium
+   python manage.py test --with-selenium
+
+Alternatively, django-nose-selenium provides a mixin that has the benefit of
+raising a SkipTest exception if the plugin was not loaded and the selenium
 attribute is accessed::
 
 
@@ -73,8 +101,8 @@ Fixtures
 --------
 
 The default fixtures of django are run in transactions and not available to a
-live testing server, therefore `noseselenium` provides an option to load and
-**commit** fixtures to the database automated. Please note that there's no
+live testing server, therefore `noseselenium` provides an option to load **and
+commit** fixtures to the database automatically. Please note that there's no
 automatic rollback, so the data will stay in your test database for the rest of
 the run if you don't provide a custom teardown strategy.
 
@@ -87,6 +115,9 @@ the run if you don't provide a custom teardown strategy.
 
        selenium_fixtures = ['user_data.json']
 
+       def tearDown(self):
+           # Remove data from user_data.json
+
        def test_login(self):
            """Tests the login page."""
 
@@ -95,6 +126,8 @@ the run if you don't provide a custom teardown strategy.
            sel.type("id_username", "pascal")
            sel.type("id_password", "iwantapony")
            sel.click("//form[@id='myform']/p/button")
+           sel.wait_for_page_to_load(5000)
+           self.failUnless(self.is_text_present("Hello, Pascal!"))
 
 To enable selenium fixtures, nosetests must be called with the
 additional ``--with-selenium-fixtures`` flag.
@@ -113,6 +146,9 @@ The liveserver plugin introduces two new configuration options:
 
    * LIVE_SERVER_ADDRESS, defaults to `0.0.0.0`
    * LIVE_SERVER_PORT, defaults to `8080`
+   * LIVE_SERVER_STATIC, boolean that defaults to True. If enabled, the live
+     server enables serving of static files via the
+     ``django.contrib.staticfiles`` app.
 
 These should match your `Selenium Settings`__.
 
