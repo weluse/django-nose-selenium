@@ -8,7 +8,7 @@ Heavily inspired by `django-sane-testing`_.
 
 _django-sane-testing: http://github.com/Almad/django-sane-testing/
 
-:copyright: 2010, Pascal Hartig <phartig@weluse.de>
+:copyright: 2010-2011, Pascal Hartig <phartig@weluse.de>
 :license: BSD, see LICENSE for more details.
 """
 
@@ -27,6 +27,7 @@ from django.core.handlers.wsgi import WSGIHandler
 from django.core.servers.basehttp import WSGIRequestHandler, \
         AdminMediaHandler, WSGIServerException
 from django.db.backends.creation import TEST_DATABASE_PREFIX
+from django.contrib.staticfiles.handlers import StaticFilesHandler
 
 
 def _get_test_db_name(connection):
@@ -41,6 +42,18 @@ def _get_test_db_name(connection):
         else:
             return TEST_DATABASE_PREFIX + \
                     old_name
+
+
+def _set_autocommit(connection):
+        """Make sure a connection is in autocommit mode."""
+        if hasattr(connection.connection, "autocommit"):
+            if callable(connection.connection.autocommit):
+                connection.connection.autocommit(True)
+            else:
+                connection.connection.autocommit = True
+        elif hasattr(connection.connection, "set_isolation_level"):
+            connection.connection.set_isolation_level(0)
+
 
 def _setup_test_db():
     """Activates a test dbs without recreating them."""
@@ -61,6 +74,7 @@ def _setup_test_db():
 
         # Trigger side effects.
         connection.cursor()
+        _set_autocommit(connection)
 
 
 def get_test_case_class(nose_test):
@@ -262,7 +276,8 @@ class AbstractLiveServerPlugin(Plugin):
                 address=getattr(settings, 'LIVE_SERVER_ADDRESS',
                                 '0.0.0.0'),
                 port=getattr(settings, 'LIVE_SERVER_PORT',
-                             8080)
+                             8080),
+                serve_static=getattr(settings, 'LIVE_SERVER_STATIC', True)
             )
 
             self.server_started = True
@@ -282,9 +297,10 @@ class AbstractLiveServerPlugin(Plugin):
 class TestServerThread(threading.Thread):
     """Thread for running a http server while tests are running."""
 
-    def __init__(self, address, port):
+    def __init__(self, address, port, serve_static=True):
         self.address = address
         self.port = port
+        self.serve_static = serve_static
         self._stopevent = threading.Event()
         self.started = threading.Event()
         self.error = None
@@ -294,6 +310,9 @@ class TestServerThread(threading.Thread):
         """Sets up test server and loops over handling http requests."""
         try:
             handler = AdminMediaHandler(WSGIHandler())
+            if self.serve_static:
+                handler = StaticFilesHandler(handler)
+
             server_address = (self.address, self.port)
             httpd = StoppableWSGIServer(server_address, WSGIRequestHandler)
             httpd.application = handler
@@ -325,8 +344,8 @@ class DjangoLiveServerPlugin(AbstractLiveServerPlugin):
     name = 'djangoliveserver'
     activation_parameter = '--with-djangoliveserver'
 
-    def start_server(self, address='0.0.0.0', port=8000):
-        self.server_thread = TestServerThread(address, port)
+    def start_server(self, address='0.0.0.0', port=8000, serve_static=True):
+        self.server_thread = TestServerThread(address, port, serve_static)
         self.server_thread.start()
         self.server_thread.started.wait()
         if self.server_thread.error:
@@ -345,11 +364,13 @@ class CherryPyLiveServerPlugin(AbstractLiveServerPlugin):
     name = 'cherrypyliveserver'
     activation_parameter = '--with-cherrypyliveserver'
 
-    def start_server(self, address='0.0.0.0', port=8000):
+    def start_server(self, address='0.0.0.0', port=8000, serve_static=True):
         from cherrypy.wsgiserver import CherryPyWSGIServer
         from threading import Thread
 
         _application = AdminMediaHandler(WSGIHandler())
+        if serve_static:
+            _application = StaticFilesHandler(_application)
 
         def application(environ, start_response):
             environ['PATH_INFO'] = environ['SCRIPT_NAME'] + \
