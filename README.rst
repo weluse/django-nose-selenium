@@ -2,7 +2,6 @@
 django-nose-selenium
 ====================
 
-
 Adds selenium testing support to your nose test suite.
 
 To use, run nosetests with the ``--with-selenium`` flag.
@@ -28,8 +27,7 @@ this is done by running ``pip install django-nose``, adding ``django_nose`` to
 ``INSTALLED_APPS`` and setting ``TEST_RUNNER`` to
 ``django_nose.NoseTestSuiteRunner`` in the settings.py.
 
-
-_django-nose: https://github.com/jbalogh/django-nose
+.. _django-nose: https://github.com/jbalogh/django-nose
 
 ------------
 Installation
@@ -39,9 +37,16 @@ From PyPI::
 
    pip install django-nose-selenium
 
-From Git::
+`In-development version
+<https://github.com/weluse/django-nose-selenium/tarball/master#egg=django-nose-selenium-dev>`_
+via Pip::
 
-   pip install -e git://github.com/weluse/django-nose-selenium.git#egg=noseselenium
+   pip install django-nose-selenium==dev
+
+Directly from Git::
+
+   pip install -e
+   git://github.com/weluse/django-nose-selenium.git#egg=django-nose-selenium
 
 ---------------
 Django Settings

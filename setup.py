@@ -10,8 +10,13 @@ A plugin to run selenium smoothly with nose.
 :license: BSD, see LICENSE for more details
 """
 
+import os
 from setuptools import setup
 from noseselenium import __version__
+
+
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
 setup(
@@ -20,9 +25,9 @@ setup(
     author="Pascal Hartig",
     author_email="phartig@weluse.de",
     description="A nose plugin to run selenium tests with django",
+    long_description=read('README.rst'),
     url="http://github.com/weluse/django-nose-selenium",
     packages=['noseselenium', 'noseselenium.thirdparty'],
-    long_description=__doc__,
     requires=['Django (>=1.2)', 'nose (>=0.10)'],
     classifiers=[
         "Development Status :: 4 - Beta",
