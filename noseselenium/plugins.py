@@ -118,7 +118,7 @@ class SeleniumPlugin(Plugin):
             if isinstance(test.test, nose.case.MethodTestCase):
                 self = test.test.test.im_self
             elif isinstance(test.test, TestCase):
-                self = test.test._exc_info.im_self
+                self = test.test.run.im_self
 
             self.selenium.stop()
             del self.selenium
@@ -153,7 +153,7 @@ class SeleniumPlugin(Plugin):
             if isinstance(test.test, nose.case.MethodTestCase):
                 test.test.test.im_self.selenium = sel
             elif isinstance(test.test, TestCase):
-                test.test._exc_info.im_self.selenium = sel
+                test.test.run.im_self.selenium = sel
             else:
                 raise SkipTest("Test skipped because it's not a method.")
 
