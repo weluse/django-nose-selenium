@@ -1,0 +1,11 @@
+django-nose-selenium Changelog
+==============================
+
+Here you can see the list of changes between the releases.
+
+Version 0.7.2
+-------------
+
+Bugfix release, released on 2011-08-03
+
+- Restored compatibility with Django 1.2 (#7, reported by Issac Kelly)
