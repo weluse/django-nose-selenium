@@ -382,7 +382,7 @@ class CherryPyLiveServerPlugin(AbstractLiveServerPlugin):
 
         _application = AdminMediaHandler(WSGIHandler())
         if serve_static:
-            _patch_static_handler(_application)
+            _application = _patch_static_handler(_application)
 
         def application(environ, start_response):
             environ['PATH_INFO'] = environ['SCRIPT_NAME'] + \
