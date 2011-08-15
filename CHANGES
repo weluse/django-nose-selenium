@@ -3,6 +3,14 @@ django-nose-selenium Changelog
 
 Here you can see the list of changes between the releases.
 
+Version 0.7.3
+-------------
+
+Bugfix release, released on 2011-08-15
+
+- Fixed regression regarding static files serving with the CherryPy liveserver
+  plugin.
+
 Version 0.7.2
 -------------
 
