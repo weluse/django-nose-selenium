@@ -10,6 +10,7 @@ Testcases for selenium.
 """
 
 from nose.plugins.skip import SkipTest
+from selenium import webdriver
 
 
 class SeleniumSkipper(object):
@@ -24,12 +25,18 @@ class SeleniumSkipper(object):
 
 class SeleniumTestCaseMixin(object):
     """
-    Provides a selenium attribute that raises :class:`SkipTest`
-    when not overwritten by :class:`SeleniumPlugin`.
+    Apply this to your TestCase base class to get Webdriver functionality in
+    your tests. If the selenium attribute is accessed without having
+    :class:`SeleniumPlugin` enabled, the test is skipped.
     """
 
-    # To be replaced by the plugin.
     selenium = SeleniumSkipper()
-    # Triggers the plugin if enabled.
     selenium_test = True
     start_live_server = True
+
+    def get_driver(self):
+        """Builds the driver instance and returns it. Override this to use
+        custom options.
+        """
+
+        return webdriver.Firefox()

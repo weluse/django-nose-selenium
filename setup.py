@@ -36,6 +36,9 @@ setup(
         "Topic :: Software Development :: Testing",
         "Topic :: Software Development :: Libraries :: Python Modules"
     ],
+    install_requires=[
+        'selenium'
+    ],
     entry_points={
         'nose.plugins.0.10': [
             'selenium = noseselenium.plugins:SeleniumPlugin',
