@@ -13,5 +13,6 @@ class ExampleWebdriverTestCase(TestCase, SeleniumTestCaseMixin):
 
 class View1WebdriverTestCase(ExampleWebdriverTestCase):
     def test_view(self):
-        self.selenium.get('http://localhost:5888/view1')
-        self.assertEquals('Hello, World!', self.selenium.title)
+        driver = self.selenium.driver
+        self.selenium.open('/view1')
+        self.assertEquals('Hello, World!', driver.title)

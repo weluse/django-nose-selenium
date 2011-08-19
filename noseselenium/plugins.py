@@ -20,7 +20,8 @@ import django
 import selenium
 
 from nose.plugins import Plugin
-from nose.plugins.skip import SkipTest
+from django.conf import settings
+from selenium.webdriver.emulation.selenium1 import DrivenSelenium
 from unittest import TestCase
 # Liveserver imports
 from SocketServer import ThreadingMixIn
@@ -132,7 +133,7 @@ class SeleniumPlugin(Plugin):
             elif isinstance(test.test, TestCase):
                 im_self = test.test.run.im_self
 
-            im_self.selenium.quit()
+            im_self.selenium.driver.quit()
 
     def _inject_selenium(self, test):
         """
@@ -145,7 +146,11 @@ class SeleniumPlugin(Plugin):
             raise RuntimeError("Test case does not implement a get_driver() "
                                "method.")
 
-        sel = test.test.get_driver()
+        driver = test.test.get_driver()
+        url_root = getattr(settings, 'SELENIUM_URL_ROOT',
+                           "http://127.0.0.1:8080")
+        sel = DrivenSelenium(driver, url_root)
+
         test.test.selenium = sel
         test_case.selenium_started = True
 
