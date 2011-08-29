@@ -6,6 +6,14 @@ Adds selenium testing support to your nose test suite.
 
 To use, run nosetests with the ``--with-selenium`` flag.
 
+--------
+Tutorial
+--------
+
+For a complete guide on getting started, have a look at Charl P. Botha's
+`concise tutorial on django-nose-selenium
+<http://blog.timescapers.com/2011/08/27/django-nose-selenium-a-concise-tutorial/>`_.
+
 -----------------
 Why use Selenium?
 -----------------
