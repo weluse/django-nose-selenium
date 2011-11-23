@@ -12,16 +12,14 @@ _django-sane-testing: http://github.com/Almad/django-sane-testing/
 :license: BSD, see LICENSE for more details.
 """
 
-import socket
 import nose
 import time
 import threading
 import django
-import selenium
 
 from nose.plugins import Plugin
 from django.conf import settings
-from selenium.webdriver.emulation.selenium1 import DrivenSelenium
+from selenium import webdriver
 from unittest import TestCase
 # Liveserver imports
 from SocketServer import ThreadingMixIn
@@ -133,7 +131,7 @@ class SeleniumPlugin(Plugin):
             elif isinstance(test.test, TestCase):
                 im_self = test.test.run.im_self
 
-            im_self.selenium.driver.quit()
+            im_self.selenium.service.stop()
 
     def _inject_selenium(self, test):
         """
@@ -149,9 +147,13 @@ class SeleniumPlugin(Plugin):
         driver = test.test.get_driver()
         url_root = getattr(settings, 'SELENIUM_URL_ROOT',
                            "http://127.0.0.1:8080")
-        sel = DrivenSelenium(driver, url_root)
 
-        test.test.selenium = sel
+        # TODO: What about url root? The Java API still supports this as the
+        # actual driver is just something used by the selenium client that
+        # sits on top. The current python implementation, however, does no
+        # longer provide that layer.
+
+        test.test.selenium = driver
         test_case.selenium_started = True
 
 
