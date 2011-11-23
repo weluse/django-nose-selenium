@@ -12,7 +12,9 @@ class ExampleWebdriverTestCase(TestCase, SeleniumTestCaseMixin):
 
 
 class View1WebdriverTestCase(ExampleWebdriverTestCase):
+    # XXX: This should be automatically used.
+    BASE_URL = "http://127.0.0.1:8080"
+
     def test_view(self):
-        driver = self.selenium.driver
-        self.selenium.open('/view1')
-        self.assertEquals('Hello, World!', driver.title)
+        self.selenium.get(self.BASE_URL + '/view1')
+        self.assertEquals('Hello, World!', self.selenium.title)
