@@ -2,9 +2,14 @@
 django-nose-selenium
 ====================
 
+.. warning::
+   This package is no longer under active development. For Django 1.4+ selenium support,
+   check out `selenose <http://selenose.readthedocs.org/en/latest/>`_.
+
 Adds selenium testing support to your nose test suite.
 
 To use, run nosetests with the ``--with-selenium`` flag.
+
 
 --------
 Tutorial
